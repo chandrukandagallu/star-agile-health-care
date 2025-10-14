@@ -14,9 +14,9 @@ spec:
       labels:
         app: front-end
     spec:
-       containers:
-         - name: medicure
-           image: chandruka/healthcare:1.0
-           ports:
-             - containerPort: 8082
-               name: http-web-app-01
+      containers:
+        - name: medicure
+          image: chandruka/healthcare:1.0
+          ports:
+            - containerPort: 8082
+              name: http-web-app-01
