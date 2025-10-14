@@ -39,12 +39,13 @@ pipeline {
 
         stage('Deploy Kubernetes') {
             steps {
-                sshagent(['jenkins']) {
+                sshagent(['8150cbb1-c684-4cd2-8240-6420058329bc']) {
                     sh '''
-                        chmod 600 ./terraform_files/jenkins.pem
-                        scp -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem deployment.yml ubuntu@13.201.130.117:/home/ubuntu/
-                        scp -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem service.yml ubuntu@13.201.130.117:/home/ubuntu/
-                        ssh -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem ubuntu@13.201.130.117 "kubectl apply -f /home/ubuntu/"
+                        echo "Transferring Kubernetes files..."
+                        scp -o StrictHostKeyChecking=no deployment.yml ubuntu@13.201.130.117:/home/ubuntu/
+                        scp -o StrictHostKeyChecking=no service.yml ubuntu@13.201.130.117:/home/ubuntu/
+                        echo "Applying Kubernetes manifests..."
+                        ssh -o StrictHostKeyChecking=no ubuntu@13.201.130.117 "kubectl apply -f /home/ubuntu/"
                     '''
                 }
             }
