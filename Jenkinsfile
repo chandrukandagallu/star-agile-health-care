@@ -5,7 +5,7 @@ pipeline {
         // AWS credentials stored in Jenkins (ID: awslogin)
         AWS_ACCESS_KEY_ID     = credentials('awslogin')
         AWS_SECRET_ACCESS_KEY = credentials('awslogin')
-    
+        
         // EC2 server details
         EC2_USER    = 'ubuntu'
         EC2_HOST    = '43.204.218.158'   // Use your public IP
@@ -57,22 +57,23 @@ pipeline {
                 """
             }
         }
-    }
-stage('Deploy to Kubernetes') {
-    steps {
-        echo 'Deploying to Kubernetes...'
-        sh """
-        # Set kubeconfig for Jenkins
-        export KUBECONFIG=/var/lib/jenkins/.kube/config
 
-        # Apply Kubernetes deployment
-        kubectl apply -f k8s-deployment.yaml
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'Deploying to Kubernetes...'
+                sh """
+                    # Set kubeconfig for Jenkins
+                    export KUBECONFIG=/var/lib/jenkins/.kube/config
 
-        # Wait for rollout to complete
-        kubectl rollout status deployment/medicure-deployment
-        """
+                    # Apply Kubernetes deployment
+                    kubectl apply -f k8s-deployment.yaml
+
+                    # Wait for rollout to complete
+                    kubectl rollout status deployment/medicure-deployment
+                """
+            }
+        }
     }
-}
 
     post {
         success {
