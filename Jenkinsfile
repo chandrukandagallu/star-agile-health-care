@@ -2,13 +2,17 @@ pipeline {
     agent any
 
     environment {
-        // AWS credentials
-        AWS_ACCESS_KEY_ID = credentials('awslogin')
+        // AWS credentials stored in Jenkins (ID: awslogin)
+        AWS_ACCESS_KEY_ID     = credentials('awslogin')
         AWS_SECRET_ACCESS_KEY = credentials('awslogin')
+        
         // EC2 server details
-        EC2_USER = 'ubuntu'
-        EC2_HOST = '43.204.218.158'  // Use Elastic IP or Public DNS
-        SSH_KEY_PATH = '/var/lib/jenkins/.ssh/jenkins.pem'  // Path to your Jenkins EC2 key
+        EC2_USER    = 'ubuntu'
+        EC2_HOST    = '43.204.218.158'   // Use your public IP
+        SSH_KEY_PATH = '/var/lib/jenkins/.ssh/jenkins.pem'
+        
+        // AWS region (change if needed)
+        AWS_REGION = 'us-east-1'
     }
 
     stages {
@@ -22,18 +26,12 @@ pipeline {
 
         stage('Build Package') {
             steps {
-                echo 'Compiling, testing, and packaging the application'
-                sh 'mvn package'
+                echo 'Compiling and packaging the application'
+                sh 'mvn clean package'
             }
         }
 
-        stage('AWS Login') {
-            steps {
-                echo 'AWS credentials loaded'
-            }
-        }
-
-        stage('Setup Kubernetes Cluster') {
+        stage('Terraform Setup') {
             steps {
                 dir('terraform_files') {
                     echo 'Initializing Terraform...'
@@ -41,29 +39,32 @@ pipeline {
                     echo 'Validating Terraform configuration...'
                     sh 'terraform validate'
                     echo 'Applying Terraform plan...'
-                    sh 'terraform apply --auto-approve'
-                    sh 'sleep 20'
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
 
-        stage('Deploy Kubernetes') {
+        stage('Deploy to EC2') {
             steps {
-                echo 'Deploying Kubernetes manifests to EC2'
-                sshagent(['8150cbb1-c684-4cd2-8240-6420058329bc']) {
-                    sh """
-                        # Ensure the key is readable (no sudo needed)
-                        chmod 400 ${SSH_KEY_PATH}
-
-                        # Copy files to EC2
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} deployment.yml ${EC2_USER}@${EC2_HOST}:/home/ubuntu/
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} service.yml ${EC2_USER}@${EC2_HOST}:/home/ubuntu/
-
-                        # Apply Kubernetes manifests
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ${EC2_USER}@${EC2_HOST} "kubectl apply -f /home/ubuntu/"
-                    """
-                }
+                echo 'Copying artifact to EC2'
+                sh """
+                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} target/*.jar ${EC2_USER}@${EC2_HOST}:/home/ubuntu/
+                """
+                echo 'Running application on EC2'
+                sh """
+                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY_PATH} ${EC2_USER}@${EC2_HOST} \\
+                    'nohup java -jar /home/ubuntu/*.jar > app.log 2>&1 &'
+                """
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs for details.'
         }
     }
 }
