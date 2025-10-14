@@ -51,24 +51,7 @@ pipeline {
         }
       }
     }
-    stage('deploy kubernetes'){
-steps{
-  sh 'sudo chmod 600 ./terraform_files/jenkins.pem'    
-  sh 'minikube start'
-  sh 'sleep 30'
-  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem deployment.yml ubuntu@13.201.130.117:/home/ubuntu/'
-  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem service.yml ubuntu@13.201.130.117:/home/ubuntu/'
-script{
-  try{
-  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem ubuntu@13.201.130.117 kubectl apply -f .'
-  }catch(error)
-  {
-  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem ubuntu@13.201.130.117 kubectl apply -f .'
-  }
-}
-}
-}
-  }
-}
+   
+
 
     
