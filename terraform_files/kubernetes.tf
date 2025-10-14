@@ -1,5 +1,5 @@
 provider "aws" {
-region = "ap-souyh-1"
+region = "ap-south-1"
 }
 resource "aws_instance" "kubernetes-server" {
 ami = "ami-02d26659fd82cf299"
