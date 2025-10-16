@@ -75,14 +75,17 @@ pipeline {
         }
 
         // 6️⃣ Deploy to Kubernetes via SSH
-        stage('Deploy to Kubernetes') {
+     stage('Deploy to Kubernetes') {
     steps {
         sh """
-            kubectl apply -f /var/lib/jenkins/workspace/healthcare/deployment.yml
-            kubectl get pods -n default
+            eval $(minikube -p minikube docker-env)
+            minikube kubectl -- apply -f deployment.yml
+            minikube kubectl -- apply -f service.yml
+            minikube kubectl -- get pods -n default
         """
     }
 }
+
 
         }
     }
