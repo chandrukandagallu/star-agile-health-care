@@ -1,71 +1,74 @@
 pipeline {
-    agent any
-
-    environment {
-        AWS_REGION = 'us-east-1'
-        EC2_HOST = '43.204.218.158'
-        EC2_USER = 'ubuntu'
-        SSH_KEY = './terraform_files/jenkins.pem'  // ensure the pem file exists
-    }
-
-    stages {
-
-        stage('Git Checkout') {
-            steps {
-                echo 'Cloning repo from GitHub'
-                git branch: 'master', url: 'https://github.com/chandrukandagallu/star-agile-health-care.git'
+  agent any
+          
+  stages {
+    stage('Git Checkout') {
+      steps {
+        echo 'This stage is to clone the repo from github'
+        git branch: 'master', url: 'https://github.com/Pratap-mulakala/star-agile-health-care.git'
+                        }
             }
-        }
-
-        stage('Build Package') {
-            steps {
-                echo 'Compiling and packaging application'
-                sh 'mvn clean package'
+    stage('Create Package') {
+      steps {
+        echo 'This stage will compile, test, package my application'
+        sh 'mvn package'
+                          }
             }
-        }
-
-        stage('Terraform Setup (EKS Cluster)') {
-    steps {
-        echo 'Initializing Terraform...'
-        sh '''
-            terraform init
-            terraform validate
-            terraform plan
-            terraform apply -auto-approve
-        '''
+    
+    /* stage('Create Docker Image') {
+      steps {
+        echo 'This stage will Create a Docker image'
+        sh 'docker build -t pratap1371/healthcare:1.0 .'
+                          }
+            }
+     stage('Docker-Login') {
+           steps {
+              withCredentials([usernamePassword(credentialsId: 'dockercreds', passwordVariable: 'dockerpassword', usernameVariable: 'dockerlogin')]) {
+               sh 'docker login -u ${dockerlogin} -p ${dockerpassword}'
+                             
+                        }
+                }
+}
+    stage('Docker Push-Image') {
+      steps {
+        echo 'This stage will push my new image to the dockerhub'
+        sh 'docker push pratap1371/healthcare:1.0'
+            }
+      } */
+    stage('AWS-Login') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'awslogin', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+         }
+      }
     }
+    stage('setting the Kubernetes Cluster') {
+      steps {
+        dir('terraform_files'){
+          sh 'terraform init'
+          sh 'terraform validate'
+          sh 'terraform apply --auto-approve'
+          sh 'sleep 20'
+        }
+      }
+    }
+    stage('deploy kubernetes'){
+steps{
+  sh 'sudo chmod 600 ./terraform_files/sir.pem'    
+  sh 'minikube start'
+  sh 'sleep 30'
+  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem deployment.yml ubuntu@172.31.17.230:/home/ubuntu/'
+  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem service.yml ubuntu@172.31.17.230:/home/ubuntu/'
+script{
+  try{
+  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem ubuntu@172.31.17.230 kubectl apply -f .'
+  }catch(error)
+  {
+  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem ubuntu@172.31.17.230 kubectl apply -f .'
+  }
+}
+}
+}
+  }
 }
 
-        stage('Configure Kubeconfig') {
-            steps {
-                echo 'Updating kubeconfig for EKS cluster'
-                sh """
-                    aws eks update-kubeconfig --region ${AWS_REGION} --name medicure-cluster --alias medicure-cluster
-                    mkdir -p /var/lib/jenkins/.kube
-                    cp ~/.kube/config /var/lib/jenkins/.kube/config
-                    chown -R jenkins:jenkins /var/lib/jenkins/.kube
-                """
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                echo 'Deploying to Kubernetes cluster'
-                sh """
-                    kubectl apply -f deployment.yml
-                    kubectl apply -f service.yml
-                    kubectl rollout status deployment/medicure-deployment
-                """
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline executed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed. Check the logs for details.'
-        }
-    }
-}
+    
