@@ -18,7 +18,7 @@ pipeline {
     /* stage('Create Docker Image') {
       steps {
         echo 'This stage will Create a Docker image'
-        sh 'docker build -t pratap1371/healthcare:1.0 .'
+        sh 'docker build -t chandruka/healthcare:1.0 .'
                           }
             }
      stage('Docker-Login') {
@@ -32,7 +32,7 @@ pipeline {
     stage('Docker Push-Image') {
       steps {
         echo 'This stage will push my new image to the dockerhub'
-        sh 'docker push pratap1371/healthcare:1.0'
+        sh 'docker push chandruka/healthcare:1.0'
             }
       } */
     stage('AWS-Login') {
@@ -53,17 +53,17 @@ pipeline {
     }
     stage('deploy kubernetes'){
 steps{
-  sh 'sudo chmod 600 ./terraform_files/sir.pem'    
+  sh 'sudo chmod 600 ./terraform_files/jenkins.pem'    
   sh 'minikube start'
   sh 'sleep 30'
-  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem deployment.yml ubuntu@172.31.17.230:/home/ubuntu/'
-  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem service.yml ubuntu@172.31.17.230:/home/ubuntu/'
+  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem deployment.yml ubuntu@172.31.17.230:/home/ubuntu/'
+  sh 'sudo scp -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem service.yml ubuntu@172.31.17.230:/home/ubuntu/'
 script{
   try{
-  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem ubuntu@172.31.17.230 kubectl apply -f .'
+  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem ubuntu@172.31.17.230 kubectl apply -f .'
   }catch(error)
   {
-  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/sir.pem ubuntu@172.31.17.230 kubectl apply -f .'
+  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files/jenkins.pem ubuntu@172.31.17.230 kubectl apply -f .'
   }
 }
 }
