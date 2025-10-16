@@ -11,20 +11,20 @@ pipeline {
     stage('Create Package') {
       steps {
         echo 'This stage will compile, test, package my application'
-        sh 'mvn package'
+        bat 'mvn package'
                           }
             }
     
     /* stage('Create Docker Image') {
       steps {
         echo 'This stage will Create a Docker image'
-        sh 'docker build -t chandruka/healthcare:1.0 .'
+        bat 'docker build -t chandruka/healthcare:1.0 .'
                           }
             }
      stage('Docker-Login') {
            steps {
               withCredentials([usernamePassword(credentialsId: 'dockercreds', passwordVariable: 'dockerpassword', usernameVariable: 'dockerlogin')]) {
-               sh 'docker login -u ${dockerlogin} -p ${dockerpassword}'
+               bat 'docker login -u ${dockerlogin} -p ${dockerpassword}'
                              
                         }
                 }
@@ -32,7 +32,7 @@ pipeline {
     stage('Docker Push-Image') {
       steps {
         echo 'This stage will push my new image to the dockerhub'
-        sh 'docker push chandruka/healthcare:1.0'
+        bat 'docker push chandruka/healthcare:1.0'
             }
       } */
     stage('AWS-Login') {
@@ -44,17 +44,17 @@ pipeline {
     stage('setting the Kubernetes Cluster') {
       steps {
         dir('terraform_files'){
-          sh 'terraform init'
-          sh 'terraform validate'
-          sh 'terraform apply --auto-approve'
-          sh 'sleep 20'
+          bat 'terraform init'
+          bat 'terraform validate'
+          bat 'terraform apply --auto-approve'
+          bat 'sleep 20'
         }
       }
     }
     /*stage('deploy to minikube') {
 steps{
-  sh 'sudo chmod 600 ./terraform_files/jenkins.pem' 
-  sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files */
+  bat 'sudo chmod 600 ./terraform_files/jenkins.pem' 
+  bat 'ssh -o StrictHostKeyChecking=no -i ./terraform_files */
     }
  }
    
