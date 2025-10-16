@@ -51,7 +51,7 @@ pipeline {
         }
       }
     }
-    stage('deploy to minikube') {
+    /*stage('deploy to minikube') {
 steps{
   sh 'sudo chmod 600 ./terraform_files/jenkins.pem' 
   sh 'ssh -o StrictHostKeyChecking=no -i ./terraform_files */
