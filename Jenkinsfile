@@ -2,15 +2,12 @@ pipeline {
     agent any
 
     environment {
-        // Set default AWS region
         AWS_REGION = 'ap-south-1'
-        // Terraform directory
         TERRAFORM_DIR = 'terraform_files'
     }
 
     stages {
 
-        // 1️⃣ Git Checkout
         stage('Git Checkout') {
             steps {
                 echo 'Cloning the GitHub repository...'
@@ -18,7 +15,6 @@ pipeline {
             }
         }
 
-        // 2️⃣ Create Package (Maven)
         stage('Create Package') {
             steps {
                 echo 'Compiling, testing, and packaging the application...'
@@ -26,11 +22,8 @@ pipeline {
             }
         }
 
-        // 3️⃣ Docker Stages (Optional)
         stage('Docker Build & Push') {
-            when {
-                expression { true } // Set to true if you want Docker build/push
-            }
+            when { expression { true } }
             steps {
                 echo 'Building Docker image...'
                 sh 'docker build -t chandruka/healthcare:1.0 .'
@@ -45,7 +38,6 @@ pipeline {
             }
         }
 
-        // 4️⃣ AWS Login / Configure AWS CLI
         stage('AWS Configure') {
             steps {
                 withCredentials([
@@ -53,7 +45,6 @@ pipeline {
                     string(credentialsId: 'aws_secret_access_key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh """
-                        echo "Configuring AWS CLI..."
                         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
                         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                         aws configure set default.region $AWS_REGION
@@ -62,7 +53,6 @@ pipeline {
             }
         }
 
-        // 5️⃣ Terraform Apply (Kubernetes Cluster)
         stage('Terraform Apply') {
             steps {
                 dir("${TERRAFORM_DIR}") {
@@ -74,36 +64,26 @@ pipeline {
             }
         }
 
-       // 6️⃣ Deploy to Kubernetes
-// 6️⃣ Deploy to Kubernetes
-stage('Deploy to Kubernetes') {
-    steps {
-        sh '''
-            # Check if minikube is running, otherwise start it with required resources
-            if ! minikube status >/dev/null 2>&1; then
-                echo "Starting Minikube..."
-                minikube start --driver=docker --memory=1800mb --cpus=2
-            else
-                echo "Minikube already running"
-            fi
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    # Delete old Minikube cluster (if exists) to avoid resource issues
+                    minikube delete || true
 
-            # Use minikube's docker environment (optional)
-            eval $(minikube -p minikube docker-env)
+                    # Start Minikube with safe memory/CPU
+                    minikube start --driver=docker --memory=1800mb --cpus=2
 
-            # Apply Kubernetes manifests
-            minikube kubectl -- apply -f k8s/deployment.yml
-            minikube kubectl -- apply -f k8s/service.yml
+                    # Use Minikube's docker environment
+                    eval $(minikube -p minikube docker-env)
 
-            # Verify pods
-            minikube kubectl -- get pods -n default
-        '''
-    }
-}
+                    # Apply Kubernetes manifests
+                    minikube kubectl -- apply -f k8s/deployment.yml
+                    minikube kubectl -- apply -f k8s/service.yml
 
-
-
-
-
+                    # Check pod status
+                    minikube kubectl -- get pods -n default
+                '''
+            }
         }
     }
-
+}
