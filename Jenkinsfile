@@ -25,18 +25,16 @@ pipeline {
         }
 
         stage('Terraform Setup (EKS Cluster)') {
-            steps {
-                dir('terraform_files') {
-                    echo 'Initializing Terraform...'
-                    sh 'terraform init'
-                    echo 'Validating Terraform...'
-                    sh 'terraform validate'
-                    echo 'Applying Terraform plan...'
-                    sh 'terraform apply -auto-approve'
-                    sh 'sleep 20'
-                }
-            }
-        }
+    steps {
+        echo 'Initializing Terraform...'
+        sh '''
+            terraform init
+            terraform validate
+            terraform plan
+            terraform apply -auto-approve
+        '''
+    }
+}
 
         stage('Configure Kubeconfig') {
             steps {
