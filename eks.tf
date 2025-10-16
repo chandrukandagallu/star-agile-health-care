@@ -1,27 +1,33 @@
 # terraform_files/eks.tf
 
 module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "18.31.2"
+  source          = "terraform-aws-modules/eks/aws"
+  version         = "18.31.2"
 
   cluster_name    = "medicure-cluster"
-  cluster_version = "1.29"
-  cluster_endpoint_public_access = true
+  cluster_version = "1.27"
+  subnets         = module.vpc.private_subnets
+  vpc_id          = module.vpc.vpc_id
 
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
+  # Mumbai AZs
+  availability_zones = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
 
-  eks_managed_node_groups = {
+  # Node group configuration
+  node_groups = {
     medicure_nodes = {
       desired_capacity = 2
       max_capacity     = 3
       min_capacity     = 1
 
-      instance_types = ["t3.medium"]
+      instance_type    = "t3.medium"
+      key_name         = "jenkins"  # make sure this key exists in Mumbai
     }
   }
 
+  manage_aws_auth = true
+
   tags = {
-    Name = "medicure-eks"
+    Environment = "dev"
+    Project     = "medicure"
   }
 }
