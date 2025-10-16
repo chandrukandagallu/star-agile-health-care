@@ -64,26 +64,24 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                    # Delete old Minikube cluster (if exists) to avoid resource issues
-                    minikube delete || true
+       stage('Deploy to Kubernetes') {
+    steps {
+        sh '''
+            # Start Minikube if not running
+            minikube status || minikube start --driver=docker --memory=1900mb --cpus=2
 
-                    # Start Minikube with safe memory/CPU
-                    minikube start --driver=docker --memory=1800mb --cpus=2
+            # Point Docker CLI to Minikube's Docker daemon (optional)
+            eval $(minikube -p minikube docker-env)
 
-                    # Use Minikube's docker environment
-                    eval $(minikube -p minikube docker-env)
+            # Apply Kubernetes manifests
+            minikube kubectl -- apply -f deployment.yml
+            minikube kubectl -- apply -f service.yml
 
-                    # Apply Kubernetes manifests
-                    minikube kubectl -- apply -f k8s/deployment.yml
-                    minikube kubectl -- apply -f k8s/service.yml
+            # Verify pods
+            minikube kubectl -- get pods -n default
+        '''
+    }
+}
 
-                    # Check pod status
-                    minikube kubectl -- get pods -n default
-                '''
-            }
-        }
     }
 }
