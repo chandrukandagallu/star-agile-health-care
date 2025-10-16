@@ -76,14 +76,14 @@ pipeline {
 
         // 6️⃣ Deploy to Kubernetes via SSH
         stage('Deploy to Kubernetes') {
-            steps {
-                sshagent(['jenkins-ssh-key']) { // Jenkins credential for PEM key
-                    sh """
-                        chmod 600 ${TERRAFORM_DIR}/jenkins.pem
-                        ssh -o StrictHostKeyChecking=no -i ${TERRAFORM_DIR}/jenkins.pem ubuntu@<K8S_SERVER_IP> 'kubectl apply -f deployment.yaml'
-                    """
-                }
-            }
+    steps {
+        sh """
+            kubectl apply -f /var/lib/jenkins/workspace/healthcare/deployment.yaml
+            kubectl get pods -n default
+        """
+    }
+}
+
         }
     }
 }
