@@ -75,13 +75,19 @@ pipeline {
         }
 
        // 6️⃣ Deploy to Kubernetes
+// 6️⃣ Deploy to Kubernetes
 stage('Deploy to Kubernetes') {
     steps {
         sh '''
-            # Start minikube if not running
-            minikube status || minikube start
+            # Check if minikube is running, otherwise start it with required resources
+            if ! minikube status >/dev/null 2>&1; then
+                echo "Starting Minikube..."
+                minikube start --driver=docker --memory=1800mb --cpus=2
+            else
+                echo "Minikube already running"
+            fi
 
-            # Use minikube's docker environment (optional if building images for Minikube)
+            # Use minikube's docker environment (optional)
             eval $(minikube -p minikube docker-env)
 
             # Apply Kubernetes manifests
@@ -93,6 +99,7 @@ stage('Deploy to Kubernetes') {
         '''
     }
 }
+
 
 
 
