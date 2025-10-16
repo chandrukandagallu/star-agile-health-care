@@ -77,16 +77,12 @@ pipeline {
        // 6️⃣ Deploy to Kubernetes
 stage('Deploy to Kubernetes') {
     steps {
-        // Use single quotes to avoid Groovy interpolation issues
         sh '''
-            # Set Docker environment for Minikube
-            eval $(minikube -p minikube docker-env)
-
-            # Apply Kubernetes manifests
+            # Apply Kubernetes manifests without Docker-env
             minikube kubectl -- apply -f k8s/deployment.yml
             minikube kubectl -- apply -f k8s/service.yml
 
-            # Check pods status
+            # Check pods
             minikube kubectl -- get pods -n default
         '''
     }
