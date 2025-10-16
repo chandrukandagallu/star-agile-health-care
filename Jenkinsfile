@@ -78,7 +78,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
     steps {
         sh """
-            kubectl apply -f /var/lib/jenkins/workspace/healthcare/deployment.yaml
+            kubectl apply -f /var/lib/jenkins/workspace/healthcare/deployment.yml
             kubectl get pods -n default
         """
     }
